@@ -11,6 +11,8 @@
     <modules>
         <module>S01_Bean_Container</module>
         <module>S02_ApplicationContext_implement</module>
+        <module>S03_Bean_Life_Cycle</module>
+        <module>S04_BeanPostProcessor</module>
     </modules>
 
     <properties>
@@ -26,5 +28,7 @@
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>2.2.5.RELEASE</version>
     </parent>
+
+
 
 </project>

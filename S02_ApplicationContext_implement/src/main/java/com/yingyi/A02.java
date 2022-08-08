@@ -3,6 +3,7 @@ package com.yingyi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
@@ -43,7 +44,25 @@ public class A02 {
          * org.springframework.context.event.internalEventListenerProcessor
          * org.springframework.context.event.internalEventListenerFactory
          */
-        //给BeanFactory中 添加一些常用的后处理器
+        /**
+         * AnnotationConfigUtils
+         * 给BeanFactory中 添加一些常用的后处理器 处理 @Bean、@ComponentScan
+
+         *
+         *  添加一个bean后处理器的加载顺序的比较器AnnotationAwareOrderComparator.INSTANCE
+         *   比较器通过 bean后处理器 中  order 字段来判断加载的先后顺序
+         *   OrderComparator
+         *      int i1 = getOrder(o1, sourceProvider);
+         * 		int i2 = getOrder(o2, sourceProvider);
+         * 		    return Integer.compare(i1, i2);
+         *
+         *      order值
+         * 		 AutowiredAnnotationBeanPostProcessor Ordered.LOWEST_PRECEDENCE - 2
+         * 		 CommonAnnotationBeanPostProcessor   Ordered.LOWEST_PRECEDENCE
+         *
+         */
+
+        // Register all relevant annotation post processors in the given registry
         AnnotationConfigUtils.registerAnnotationConfigProcessors(beanFactory);
 
         /**
@@ -58,7 +77,23 @@ public class A02 {
         //区别于BeanFactory的后处理器， Bean 后处理器是对每个bean相关的
         //beanFactory::addBeanPostProcessor 给每个bean对象绑定后处理器
         //void accept(T t);
-        beanFactory.getBeansOfType(BeanPostProcessor.class).values().forEach(beanFactory::addBeanPostProcessor);
+
+        /**
+         * 默认的添加的 bean后处理器的顺序
+         *    >>>>>org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor@551bdc27
+         *    >>>>>org.springframework.context.annotation.CommonAnnotationBeanPostProcessor@58fdd99
+         *
+         * 控制添加的bean后 处理器的顺序
+         * 使用一个比较器来确定添加的顺序
+         *   >>>>>org.springframework.context.annotation.CommonAnnotationBeanPostProcessor@58fdd99
+         *   >>>>>org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor@6b1274d2
+         */
+        beanFactory.getBeansOfType(BeanPostProcessor.class).values().stream()
+                .sorted(beanFactory.getDependencyComparator())
+                .forEach(beanPostProcessor->{
+            System.out.println(">>>>>"+beanPostProcessor);
+            beanFactory.addBeanPostProcessor(beanPostProcessor);
+        });
 
         //verify that  bean definition
         for (String name : beanFactory.getBeanDefinitionNames()) {
@@ -69,7 +104,7 @@ public class A02 {
 
         System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         //验证bean对象的创建
-        System.out.println(beanFactory.getBean(Bean1.class).getBean2());
+        //System.out.println(beanFactory.getBean(Bean1.class).getBean2());
 
         /**
          * 小结：
@@ -81,6 +116,10 @@ public class A02 {
          *
          * b. bean 后处理器会有排序的逻辑
          */
+
+
+        System.out.println("====================AutoWired and Resource=======================");
+        System.out.println(beanFactory.getBean(Bean1.class).getInter());
     }
     //@Configuration 使用Java Config来代替applicationContext.xml相当于xml中的<beans></beans>标签
     //@Configuration注解的类中，使用@Bean注解标注的方法，返回的类型都会直接注册为bean。
@@ -96,11 +135,28 @@ public class A02 {
             return new Bean2();
         }
 
+        @Bean
+        public Bean3 bean3() {
+            return new Bean3();
+        }
+
+        @Bean
+        public Bean4 bean4() {
+            return new Bean4();
+        }
 
     }
 
 
     interface Inter {
+
+    }
+
+    static class Bean3 implements Inter {
+
+    }
+
+    static class Bean4 implements Inter {
 
     }
 
@@ -119,6 +175,26 @@ public class A02 {
 
         public Bean2 getBean2() {
             return bean2;
+        }
+
+
+        /**
+         * @Autowired 根据注入的变量的类型查找相应的bean，
+         * 有类型相同的再根据变量的名字查找相应名字的bean
+         *
+         * @Resource(name = "bean4") 根据name找到要注入的bean
+         *
+         * @Qualifier
+         *
+         * 当同时添加@Autowired和@Resource(name = "bean4") 根据后处理器的添加顺序来判断哪个注解生效
+         *  在添加bean后处理的方法中确定
+         */
+        @Autowired
+        @Resource(name = "bean4")
+        private Inter bean3;
+
+        private Inter getInter() {
+            return bean3;
         }
 
     }

@@ -1,0 +1,22 @@
+{
+  "groups": [
+    {
+      "name": "java",
+      "type": "com.yingyi.Bean4",
+      "sourceType": "com.yingyi.Bean4"
+    }
+  ],
+  "properties": [
+    {
+      "name": "java.home",
+      "type": "java.lang.String",
+      "sourceType": "com.yingyi.Bean4"
+    },
+    {
+      "name": "java.version",
+      "type": "java.lang.String",
+      "sourceType": "com.yingyi.Bean4"
+    }
+  ],
+  "hints": []
+}
